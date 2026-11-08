@@ -1,11 +1,21 @@
-<div align="center">
+# Enhanced Vite React TypeScript Template
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Vite + React + TypeScript + Tailwind CSS template with Shadcn/ui pre-configured.
 
-  <h1>Built with AI Studio</h2>
+## Features
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+- **Linting**: TypeScript (`tsc --noEmit`), ESLint, and Stylelint
+- **Shadcn/ui**: Pre-configured with all Shadcn components
+- **Modern Stack**: Vite + React + TypeScript + Tailwind CSS
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Available Scripts
 
-</div>
+```bash
+# Run all linting (types + JS + CSS)
+pnpm run lint
+
+# Individual linting
+pnpm run lint:types # TypeScript (tsc --noEmit)
+pnpm run lint:js    # ESLint
+pnpm run lint:css   # Stylelint
+```
