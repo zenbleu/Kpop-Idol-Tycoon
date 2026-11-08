@@ -17,7 +17,15 @@ export default function WeeklySummaryModal() {
   const isProfitable = (summary.netProfit || 0) >= 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn"
+      style={{
+        textAlign: 'justify',
+        marginLeft: 20,
+        marginTop: 10,
+        marginBottom: 10,
+      }}
+    >
       <div className="bg-[#1c1236] border-2 border-yellow-500 rounded-3xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-yellow-500/10">
         {/* Header */}
         <div className="text-center pb-4 border-b border-[#3d276b]">

@@ -1,11 +1,14 @@
 /**
- * IdolsView.jsx — Full idol roster management, profiles, stage name editing,
- * retention offers, and permanent company dismissal.
+ * IdolsView.jsx — Full idol roster management following the 3-level information hierarchy.
+ * Level 1: Clean, compact idol roster grid for browsing and filtering.
+ * Level 2: Organized Idol Profile Dossier modal with balanced portrait and full stats.
+ * Level 3: Contextual management actions (renaming, loyalty retention bonus, dismissal).
  */
 
 import React, { useState } from 'react'
 import { useGame, ACTION } from '../game/state.jsx'
-import { assetUrl } from '../lib/assets.js'
+import { getAssetPath } from '../lib/assets.js'
+import { formatMoney } from '../game/balance.js'
 import { playSfx } from '../game/audio.js'
 
 export default function IdolsView({ onSelectIdolToTrain }) {
@@ -15,14 +18,19 @@ export default function IdolsView({ onSelectIdolToTrain }) {
   const [editingStageName, setEditingStageName] = useState(false)
   const [newStageName, setNewStageName] = useState('')
   const [dismissConfirmIdol, setDismissConfirmIdol] = useState(null)
-
-  const formatMoney = (val) => '₩' + Math.max(0, val || 0).toLocaleString()
+  const [searchQuery, setSearchQuery] = useState('')
 
   const idols = state.idols || []
 
   // Filtering
   const filteredIdols = idols.filter(idol => {
     if (idol.hasLeft) return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const matchName = (idol.name || '').toLowerCase().includes(q)
+      const matchStage = (idol.stageName || '').toLowerCase().includes(q)
+      if (!matchName && !matchStage) return false
+    }
     if (filter === 'trainees') return !idol.groupId && !idol.isSolo
     if (filter === 'grouped') return !!idol.groupId
     if (filter === 'solo') return !!idol.isSolo
@@ -31,7 +39,7 @@ export default function IdolsView({ onSelectIdolToTrain }) {
     return true
   })
 
-  // Open profile modal
+  // Open profile modal (Level 2)
   const handleOpenProfile = (idol) => {
     setSelectedIdol(idol)
     setNewStageName(idol.stageName || '')
@@ -39,7 +47,7 @@ export default function IdolsView({ onSelectIdolToTrain }) {
     playSfx('click')
   }
 
-  // Save stage name
+  // Save stage name (Level 3)
   const handleSaveStageName = () => {
     if (!newStageName.trim() || !selectedIdol) return
     playSfx('click')
@@ -61,7 +69,7 @@ export default function IdolsView({ onSelectIdolToTrain }) {
     return Math.round(baseCost * tierMultiplier * repeatedMultiplier)
   }
 
-  // Offer retention
+  // Offer retention (Level 3)
   const handleOfferRetention = (idol) => {
     const cost = calculateRetentionCost(idol)
     if (state.money < cost) {
@@ -85,7 +93,7 @@ export default function IdolsView({ onSelectIdolToTrain }) {
     }
   }
 
-  // Confirm dismissal
+  // Confirm dismissal (Level 3)
   const handlePermanentDismissal = () => {
     if (!dismissConfirmIdol) return
     playSfx('buzz')
@@ -97,226 +105,324 @@ export default function IdolsView({ onSelectIdolToTrain }) {
     setSelectedIdol(null)
   }
 
+  const getTierColor = (tier) => {
+    switch (tier) {
+      case 'P': return '#FFD700'
+      case 'S': return '#FF6B9D'
+      case 'A': return '#C084FC'
+      case 'B': return '#60A5FA'
+      case 'C': return '#34D399'
+      case 'D': return '#FBBF24'
+      default: return '#9CA3AF'
+    }
+  }
+
   return (
-    <div className="idols-view-container">
-      {/* ── 1. Top Filters & Counter ───────────────────────────────── */}
-      <div className="panel">
-        <div className="panel-title flex items-center justify-between">
-          <span>🎤 AGENCY IDOL & TRAINEE ROSTER</span>
-          <span className="small text-gold">TOTAL: {idols.length} IDOLS</span>
+    <div className="space-y-4">
+      {/* ── Level 1: Roster Overview Header & Filters ───────────────────── */}
+      <div className="bg-[#1e1338] border-2 border-[#543b8a] p-3.5 sm:p-4 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xl">🎤</span>
+          <div>
+            <h2 className="text-base font-bold text-white font-pixel">
+              AGENCY IDOL & TRAINEE ROSTER
+            </h2>
+            <div className="text-[10px] text-purple-300 font-pixel">
+              Total Roster: <strong className="text-yellow-300">{idols.length} Idols</strong> · Click any idol card to view profile & actions
+            </div>
+          </div>
         </div>
 
-        <div className="seg">
-          {[
-            { id: 'all', label: `ALL (${idols.length})` },
-            { id: 'trainees', label: `TRAINEES (${idols.filter(i => !i.groupId && !i.isSolo).length})` },
-            { id: 'grouped', label: `GROUP MEMBERS (${idols.filter(i => i.groupId).length})` },
-            { id: 'solo', label: `SOLO ARTISTS (${idols.filter(i => i.isSolo).length})` },
-            { id: 'fatigued', label: `FATIGUED (${idols.filter(i => (i.fatigue || 0) >= 70).length})` },
-            { id: 'unloyal', label: `LOW LOYALTY (${idols.filter(i => (i.loyalty || 80) <= 35).length})` },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              className={filter === tab.id ? 'sel' : ''}
-              onClick={() => {
-                playSfx('click')
-                setFilter(tab.id)
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Filter Buttons & Search */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search idol..."
+            className="bg-[#120b24] border border-[#52338c] rounded-lg px-2.5 py-1 text-white font-pixel text-[10px] focus:outline-none focus:border-pink-500 w-32 sm:w-40"
+          />
+
+          <div className="flex gap-1 overflow-x-auto py-0.5">
+            {[
+              { id: 'all', label: `ALL (${idols.length})` },
+              { id: 'trainees', label: `TRAINEES (${idols.filter(i => !i.groupId && !i.isSolo).length})` },
+              { id: 'grouped', label: `GROUP (${idols.filter(i => i.groupId).length})` },
+              { id: 'solo', label: `SOLO (${idols.filter(i => i.isSolo).length})` },
+              { id: 'fatigued', label: `TIRED (${idols.filter(i => (i.fatigue || 0) >= 70).length})` },
+              { id: 'unloyal', label: `UNHAPPY (${idols.filter(i => (i.loyalty || 80) <= 35).length})` },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                className={`px-2 py-1 rounded text-[9px] font-pixel whitespace-nowrap transition-all border ${
+                  filter === tab.id
+                    ? 'bg-pink-600 text-white font-bold border-pink-400 shadow-sm'
+                    : 'bg-[#241744] text-purple-200 border-[#472e7a] hover:border-pink-400'
+                }`}
+                onClick={() => {
+                  playSfx('click')
+                  setFilter(tab.id)
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── 2. Idol Roster Cards Grid ────────────────────────────────── */}
-      <div className="idols-grid mt-2">
-        {filteredIdols.length === 0 ? (
-          <div className="panel empty-slot-msg">
-            <p>No idols found matching this filter.</p>
-          </div>
-        ) : (
-          filteredIdols.map(idol => {
+      {/* ── Level 1: Compact Idol Cards Grid ───────────────────────────── */}
+      {filteredIdols.length === 0 ? (
+        <div className="bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-8 text-center text-purple-300 font-pixel">
+          <p className="text-sm">No idols found matching this filter.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filteredIdols.map(idol => {
             const group = state.groups.find(g => g.id === idol.groupId)
-            const retentionCost = calculateRetentionCost(idol)
+            const isUnloyal = (idol.loyalty || 80) <= 35
+            const isFatigued = (idol.fatigue || 0) >= 70
+            const tierColor = getTierColor(idol.tier)
 
             return (
-              <div key={idol.id} className="idol-card panel">
-                <div className="idol-card-top flex gap-2">
-                  <div className="portrait">
-                    <img
-                      src={assetUrl(idol.portrait)}
-                      alt={idol.name}
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                        e.target.parentNode.classList.add('broken-img-fallback')
-                      }}
-                    />
-                    <div className="fallback">🎤</div>
-                  </div>
-                  <div className="idol-main-info">
-                    <div className="flex items-center justify-between">
-                      <strong className="text-white">{idol.name}</strong>
-                      <span className="tier-tag text-gold">{idol.tier}-TIER</span>
-                    </div>
-                    <div className="tiny text-lav">Stage Name: "{idol.stageName}"</div>
-                    <div className="tiny text-lav">Age: {idol.age} · {idol.nationality} · {idol.gender}</div>
-                    <div className="tiny text-gold">{idol.specialty}</div>
-                    <div className="tiny text-pink">Personality: {idol.personality}</div>
-                  </div>
-                </div>
-
-                {/* Status Badges */}
-                <div className="status-chips-row mt-1">
-                  {group ? (
-                    <span className="tag-chip text-green">Group: {group.name}</span>
-                  ) : idol.isSolo ? (
-                    <span className="tag-chip text-pink">⭐ Solo Artist</span>
-                  ) : (
-                    <span className="tag-chip text-lav">🌱 Trainee</span>
-                  )}
-                  {idol.groupCooldownUntilWeek && idol.groupCooldownUntilWeek > (state.totalWeeksPassed || 1) && (
-                    <span className="tag-chip text-red">
-                      Cooldown: {idol.groupCooldownUntilWeek - (state.totalWeeksPassed || 1)}W left
-                    </span>
-                  )}
-                </div>
-
-                {/* Vital Bars */}
-                <div className="idol-vitals-strip mt-2">
-                  <div className="stat-bar-wrap">
-                    <span className="bar-label">STA</span>
-                    <div className="bar-track"><div className="bar-fill" style={{ width: `${idol.currentStamina || 100}%`, background: '#5CE1A0' }} /></div>
-                    <span className="bar-val">{idol.currentStamina || 100}</span>
-                  </div>
-                  <div className="stat-bar-wrap">
-                    <span className="bar-label">FAT</span>
-                    <div className="bar-track"><div className="bar-fill" style={{ width: `${idol.fatigue || 0}%`, background: idol.fatigue > 75 ? '#FF5470' : '#FF6B9D' }} /></div>
-                    <span className="bar-val">{idol.fatigue || 0}</span>
-                  </div>
-                  <div className="stat-bar-wrap">
-                    <span className="bar-label">LOY</span>
-                    <div className="bar-track"><div className="bar-fill" style={{ width: `${idol.loyalty || 80}%`, background: idol.loyalty < 35 ? '#FF5470' : '#FFD700' }} /></div>
-                    <span className="bar-val">{idol.loyalty || 80}</span>
-                  </div>
-                </div>
-
-                {/* Card Actions */}
-                <div className="idol-card-footer mt-2 flex justify-between items-center">
-                  <div className="tiny text-lav">
-                    Salary: {formatMoney(idol.contract?.salaryWeekly)}/wk
-                  </div>
-                  <div className="flex gap-1">
-                    {idol.loyalty < 40 && (
-                      <button
-                        className="btn-gold small"
-                        onClick={() => handleOfferRetention(idol)}
-                        title={`Offer ₩${retentionCost.toLocaleString()} bonus to restore loyalty`}
+              <div
+                key={idol.id}
+                onClick={() => handleOpenProfile(idol)}
+                className={`bg-[#1e1338] border-2 rounded-xl p-3 flex flex-col justify-between transition-all hover:border-pink-400 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99] ${
+                  isUnloyal
+                    ? 'border-red-500/80 bg-[#241126]'
+                    : isFatigued
+                    ? 'border-yellow-500/80 bg-[#25182a]'
+                    : 'border-[#4c347f]'
+                }`}
+                title="Click to view detailed profile and actions"
+              >
+                <div>
+                  {/* Top: Avatar + Identity */}
+                  <div className="flex gap-2.5 items-start">
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={getAssetPath(idol.portrait)}
+                        alt={idol.name}
+                        className="w-12 h-12 rounded-lg object-cover border-2 shadow-sm"
+                        style={{ borderColor: tierColor }}
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
+                        }}
+                      />
+                      <span
+                        className="absolute -bottom-1 -right-1 px-1 rounded text-[8px] font-pixel font-bold uppercase shadow"
+                        style={{ backgroundColor: tierColor, color: '#000' }}
                       >
-                        RETAIN
-                      </button>
-                    )}
-                    <button
-                      className="btn-primary small"
-                      onClick={() => handleOpenProfile(idol)}
-                    >
-                      DOSSIER
-                    </button>
+                        {idol.tier}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0 font-pixel">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-white text-xs truncate" title={idol.name}>
+                          {idol.stageName || idol.name}
+                        </strong>
+                        <span className="text-[9px] text-purple-300">
+                          {idol.age}y
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-purple-300 truncate">
+                        {idol.name} · {idol.nationality?.slice(0, 3)}
+                      </div>
+                      <div className="text-[9px] text-yellow-300 truncate mt-0.5">
+                        {idol.specialty || 'All-Rounder'}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Status & Potential row */}
+                  <div className="mt-2.5 flex items-center justify-between text-[9px] font-pixel">
+                    <span className={`px-2 py-0.5 rounded border truncate max-w-[130px] ${
+                      group
+                        ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                        : idol.isSolo
+                        ? 'bg-pink-950/70 border-pink-500/50 text-pink-300'
+                        : 'bg-purple-950/70 border-purple-500/50 text-purple-300'
+                    }`}>
+                      {group ? `👥 ${group.name}` : idol.isSolo ? '⭐ Solo' : '🌱 Trainee'}
+                    </span>
+                    <span className="text-purple-300">
+                      Pot: <strong className="text-emerald-300">{idol.potential}</strong>
+                    </span>
+                  </div>
+
+                  {/* Key Vitals (Stamina & Loyalty) */}
+                  <div className="mt-2 grid grid-cols-2 gap-2 bg-[#120826] p-2 rounded-lg border border-[#37235e] text-[9px] font-pixel">
+                    <div className="flex items-center justify-between">
+                      <span className="text-purple-400">STA</span>
+                      <span className="text-emerald-300 font-bold">{idol.currentStamina ?? 100}%</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-purple-400">LOY</span>
+                      <span className={(idol.loyalty || 80) < 35 ? 'text-red-400 font-bold' : 'text-yellow-300 font-bold'}>
+                        {idol.loyalty ?? 80}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer link hint */}
+                <div className="mt-2.5 pt-2 border-t border-[#37235e] flex items-center justify-between text-[9px] font-pixel text-purple-300">
+                  <span>{formatMoney(idol.contract?.salaryWeekly)}/wk</span>
+                  <span className="text-pink-400 font-bold">Profile →</span>
                 </div>
               </div>
             )
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
-      {/* ── 3. Detailed Idol Profile Modal ────────────────────────────── */}
+      {/* ── Level 2 & 3: Detailed Idol Profile Dossier Modal ───────────── */}
       {selectedIdol && (
-        <div className="modal-backdrop" onClick={() => setSelectedIdol(null)}>
-          <div className="modal-box idol-dossier-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="modal-title">IDOL PROFILE: {selectedIdol.name}</h2>
-
-            <div className="flex gap-2">
-              <div className="portrait big">
-                <img src={assetUrl(selectedIdol.portrait)} alt={selectedIdol.name} />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+          onClick={() => setSelectedIdol(null)}
+        >
+          <div
+            className="bg-[#1c1236] border-2 border-pink-500 rounded-2xl p-5 max-w-lg w-full shadow-2xl max-h-[92vh] overflow-y-auto space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#3d276b]">
+              <div className="flex items-center gap-2">
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-pixel font-bold uppercase shadow"
+                  style={{ backgroundColor: getTierColor(selectedIdol.tier), color: '#000' }}
+                >
+                  {selectedIdol.tier}-TIER
+                </span>
+                <h2 className="text-base font-bold text-white font-pixel">
+                  {selectedIdol.name}
+                </h2>
               </div>
-              <div className="modal-info-block">
-                <div className="stage-name-edit-row">
+              <button
+                onClick={() => setSelectedIdol(null)}
+                className="text-purple-400 hover:text-white font-pixel text-sm px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Profile Hero: Balanced Portrait (w-20 h-20) + Essential Identity */}
+            <div className="flex gap-4 items-center bg-[#120826] p-3 rounded-xl border border-[#3b2762]">
+              <img
+                src={getAssetPath(selectedIdol.portrait)}
+                alt={selectedIdol.name}
+                className="w-20 h-20 rounded-xl object-cover border-2 shadow-md flex-shrink-0"
+                style={{ borderColor: getTierColor(selectedIdol.tier) }}
+                onError={(e) => {
+                  e.target.onerror = null
+                  e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
+                }}
+              />
+              <div className="flex-1 min-w-0 font-pixel text-xs space-y-1">
+                {/* Stage Name with Rename Action (Level 3) */}
+                <div className="flex items-center gap-2">
                   {editingStageName ? (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 items-center">
                       <input
                         type="text"
                         value={newStageName}
                         onChange={e => setNewStageName(e.target.value)}
                         maxLength={20}
-                        style={{ padding: '4px', fontSize: '10px' }}
+                        className="bg-[#1e1338] border border-[#52338c] rounded px-2 py-0.5 text-xs text-white"
                       />
-                      <button className="btn-primary small" onClick={handleSaveStageName}>SAVE</button>
+                      <button className="btn-primary text-[9px] py-1 px-2" onClick={handleSaveStageName}>SAVE</button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <span>Stage Name: <strong>"{selectedIdol.stageName}"</strong></span>
-                      <button className="btn-primary small" onClick={() => setEditingStageName(true)}>RENAME</button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-300 font-bold">"{selectedIdol.stageName}"</span>
+                      <button
+                        className="text-[9px] text-pink-400 hover:underline"
+                        onClick={() => setEditingStageName(true)}
+                      >
+                        [Rename]
+                      </button>
                     </div>
                   )}
                 </div>
-                <div>Age: <strong>{selectedIdol.age} (Born Month {selectedIdol.birthMonth})</strong></div>
-                <div>Nationality: <strong>{selectedIdol.nationality} · {selectedIdol.gender}</strong></div>
-                <div>Specialty: <strong className="text-gold">{selectedIdol.specialty}</strong></div>
-                <div>Personality: <strong className="text-pink">{selectedIdol.personality}</strong></div>
-                <div>Potential: <strong className="text-green">{selectedIdol.potential}-Grade</strong></div>
-                <div>Calculated Tier: <strong className="text-gold">{selectedIdol.tier} ({selectedIdol.overallScore} pts)</strong></div>
-                <div>Individual Popularity: <strong>{selectedIdol.popularity} / 100</strong></div>
-                <div>Personal Fanbase: <strong>{selectedIdol.fanbase?.toLocaleString() || 0} fans</strong></div>
+
+                <div className="text-purple-300 text-[10px]">
+                  Age {selectedIdol.age} · {selectedIdol.nationality} · {selectedIdol.gender}
+                </div>
+                <div className="text-yellow-300 text-[10px]">
+                  Specialty: {selectedIdol.specialty}
+                </div>
+                <div className="text-pink-300 text-[10px]">
+                  Personality: {selectedIdol.personality}
+                </div>
+                <div className="text-emerald-300 text-[10px]">
+                  Potential: {selectedIdol.potential}-Grade · Score: {selectedIdol.overallScore} pts
+                </div>
               </div>
             </div>
 
-            {/* Stats Breakdown */}
-            <div className="stats-breakdown-section mt-2">
-              <div className="small text-pink mb-1">SKILL STATS ATTRIBUTES (0–100)</div>
-              <div className="stats-2col-grid">
+            {/* Level 2: Skill Attributes Breakdown (0–100) */}
+            <div className="bg-[#120826] p-3 rounded-xl border border-[#3b2762]">
+              <div className="text-[10px] text-pink-400 font-pixel mb-2 font-bold uppercase">
+                Skill Attributes (0–100)
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[9px] font-pixel">
                 {Object.entries(selectedIdol.stats || {}).map(([statKey, val]) => (
-                  <div key={statKey} className="stat-bar-wrap">
-                    <span className="bar-label" style={{ width: '48px', textTransform: 'capitalize' }}>{statKey}</span>
-                    <div className="bar-track"><div className="bar-fill" style={{ width: `${val}%` }} /></div>
-                    <span className="bar-val">{val}</span>
+                  <div key={statKey} className="flex items-center justify-between gap-1.5">
+                    <span className="text-purple-300 uppercase w-12">{statKey}</span>
+                    <div className="flex-1 bg-[#231544] h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-pink-400 h-full rounded-full" style={{ width: `${val}%` }} />
+                    </div>
+                    <span className="text-white font-bold w-6 text-right">{val}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Contract Info */}
-            <div className="cost-preview mt-2">
-              <div>Contract Status: <strong>{selectedIdol.contract?.status || 'Active'}</strong></div>
-              <div>Remaining Duration: <strong>{selectedIdol.contract?.remainingWeeks || 52} weeks</strong></div>
-              <div>Weekly Salary: <strong>{formatMoney(selectedIdol.contract?.salaryWeekly)} / week</strong></div>
-            </div>
-
-            {/* Loyalty & Retention */}
-            <div className="retention-section mt-2">
-              <div className="flex justify-between items-center mb-1">
-                <span>Loyalty: <strong className={selectedIdol.loyalty < 35 ? 'text-red' : 'text-green'}>{selectedIdol.loyalty}%</strong></span>
-                <span>Times Retained: {selectedIdol.retentionCount || 0}</span>
+            {/* Level 2 & 3: Contract & Loyalty Management */}
+            <div className="bg-[#120826] p-3 rounded-xl border border-[#3b2762] text-[10px] font-pixel space-y-2">
+              <div className="flex justify-between text-purple-300">
+                <span>Contract Remaining:</span>
+                <span className="text-white font-bold">{selectedIdol.contract?.remainingWeeks || 52} weeks</span>
               </div>
-              <button
-                className="btn-gold"
-                style={{ width: '100%', textAlign: 'center' }}
-                onClick={() => handleOfferRetention(selectedIdol)}
-                disabled={state.money < calculateRetentionCost(selectedIdol)}
-              >
-                OFFER RETENTION BONUS ({formatMoney(calculateRetentionCost(selectedIdol))})
-              </button>
+              <div className="flex justify-between text-purple-300">
+                <span>Weekly Salary:</span>
+                <span className="text-yellow-300 font-bold">{formatMoney(selectedIdol.contract?.salaryWeekly)} / week</span>
+              </div>
+              <div className="flex justify-between text-purple-300">
+                <span>Loyalty Rating:</span>
+                <span className={selectedIdol.loyalty < 35 ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
+                  {selectedIdol.loyalty}% ({selectedIdol.retentionCount || 0} retention bonuses awarded)
+                </span>
+              </div>
+
+              {/* Retention Action (Level 3) */}
+              <div className="pt-1">
+                <button
+                  className="w-full btn-gold text-xs font-pixel py-2 shadow"
+                  onClick={() => handleOfferRetention(selectedIdol)}
+                  disabled={state.money < calculateRetentionCost(selectedIdol)}
+                >
+                  OFFER RETENTION BONUS ({formatMoney(calculateRetentionCost(selectedIdol))})
+                </button>
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-between mt-3">
+            {/* Modal Actions (Level 3) */}
+            <div className="flex justify-between items-center pt-2 border-t border-[#3d276b]">
               <button
-                className="btn-danger"
+                className="px-3 py-1.5 rounded-lg text-xs font-pixel bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-500/50 transition-colors"
                 onClick={() => setDismissConfirmIdol(selectedIdol)}
               >
-                ⚠️ DISMISS FROM AGENCY
+                ⚠️ DISMISS IDOL
               </button>
-              <button className="btn-primary" onClick={() => setSelectedIdol(null)}>
+              <button
+                className="px-4 py-1.5 rounded-lg text-xs font-pixel bg-[#2d1b4e] hover:bg-[#3d2668] text-white border border-purple-500/40"
+                onClick={() => setSelectedIdol(null)}
+              >
                 CLOSE
               </button>
             </div>
@@ -324,28 +430,36 @@ export default function IdolsView({ onSelectIdolToTrain }) {
         </div>
       )}
 
-      {/* ── 4. Permanent Dismissal Confirmation Modal ─────────────────── */}
+      {/* ── Level 3: Permanent Dismissal Confirmation Modal ────────────── */}
       {dismissConfirmIdol && (
-        <div className="modal-backdrop" onClick={() => setDismissConfirmIdol(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <h2 className="modal-title text-red">⚠️ PERMANENT AGENCY DISMISSAL</h2>
-            <p className="small mb-2">
-              Are you sure you want to permanently dismiss <strong>{dismissConfirmIdol.name}</strong> from the agency?
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          onClick={() => setDismissConfirmIdol(null)}
+        >
+          <div
+            className="bg-[#2a0e1b] border-2 border-red-500 rounded-2xl p-6 max-w-md w-full shadow-2xl font-pixel text-center space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-3xl">⚠️</div>
+            <h3 className="text-sm font-bold text-red-400 uppercase">
+              CONFIRM IDOL TERMINATION
+            </h3>
+            <p className="text-xs text-purple-200 leading-relaxed">
+              Are you sure you want to permanently terminate <strong className="text-white">{dismissConfirmIdol.name}</strong> ({dismissConfirmIdol.stageName})?
+              All contracts and trainee investments will be forfeited.
             </p>
-            <div className="cost-preview text-red mb-2">
-              <p>• The idol will permanently leave and cannot be re-recruited.</p>
-              <p>• They will NOT return to the trainee pool.</p>
-              <p>• Group loyalty will drop significantly.</p>
-              <p>• Company reputation will suffer a penalty.</p>
-              <p>• This action is permanent and irreversible.</p>
-            </div>
-
-            <div className="flex justify-between">
-              <button className="btn-primary" onClick={() => setDismissConfirmIdol(null)}>
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                className="px-4 py-2 rounded-xl text-xs bg-[#1f102e] text-purple-200 border border-purple-500/40 hover:bg-[#2d1645]"
+                onClick={() => setDismissConfirmIdol(null)}
+              >
                 CANCEL
               </button>
-              <button className="btn-danger" onClick={handlePermanentDismissal}>
-                CONFIRM PERMANENT DISMISSAL
+              <button
+                className="px-4 py-2 rounded-xl text-xs bg-red-600 hover:bg-red-500 text-white font-bold border border-red-400 shadow-lg"
+                onClick={handlePermanentDismissal}
+              >
+                YES, TERMINATE CONTRACT
               </button>
             </div>
           </div>

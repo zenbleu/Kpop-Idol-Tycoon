@@ -13,7 +13,7 @@ import { playSfx } from '../game/audio.js'
 export default function ProductionView() {
   const { state, dispatch } = useGame()
 
-  const [activeTab, setActiveTab] = useState('new') // 'new', 'active', 'sales', 'discography'
+  const [activeTab, setActiveTab] = useState('active') // 'active', 'new', 'sales', 'discography'
 
   // Form state
   const [targetType, setTargetType] = useState('group') // 'group' or 'solo'
