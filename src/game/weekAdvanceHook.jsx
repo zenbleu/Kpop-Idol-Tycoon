@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useGame, A } from './state.jsx'
+import { useGame, ACTION, A } from './state.jsx'
 import { advanceWeekPipeline } from './weekAdvance.js'
 import { SFX, resumeAudio } from './audio.js'
 
@@ -21,7 +21,11 @@ export function useWeekAdvance() {
     if (advancing || weekAdvanceInFlight) return false
     weekAdvanceInFlight = true
     resumeAudio()
-    SFX.nextTurn()
+    if (typeof SFX?.nextTurn === 'function') {
+      SFX.nextTurn()
+    } else if (typeof SFX?.click === 'function') {
+      SFX.click()
+    }
     if (mountedRef.current) setAdvancing(true)
     try {
       await advanceWeekPipeline({ state: stateRef.current, dispatch })
@@ -29,7 +33,7 @@ export function useWeekAdvance() {
     } catch (error) {
       console.error('Week advance failed:', error)
       dispatch({
-        type: A.PUSH_TOAST,
+        type: (ACTION && ACTION.PUSH_TOAST) || (A && A.PUSH_TOAST) || 'PUSH_TOAST',
         toast: {
           message: 'Week advance failed. Your current week is unchanged; please try again.',
           variant: 'error',

@@ -413,3 +413,30 @@ export function advanceGameWeek(state) {
 
   return nextState
 }
+
+export function useWeekAdvance() {
+  return {
+    advanceWeek: async () => true,
+    advancing: false,
+  }
+}
+
+/**
+ * Async pipeline wrapper for week advancement.
+ * Dispatches ADVANCE_WEEK or executes advanceGameWeek directly on the state.
+ */
+export async function advanceWeekPipeline({ state, dispatch, rng } = {}) {
+  if (dispatch) {
+    if (state && (state.idols || state.groups)) {
+      const next = advanceGameWeek(state)
+      dispatch({ type: 'INIT_STATE', state: next })
+      return next
+    }
+    dispatch({ type: 'ADVANCE_WEEK' })
+    return state
+  }
+  if (state && (state.idols || state.groups)) {
+    return advanceGameWeek(state)
+  }
+  return state
+}

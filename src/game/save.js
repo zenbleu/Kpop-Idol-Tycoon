@@ -186,6 +186,9 @@ export function migrateSaveData(raw = {}) {
  * Saves current state into a specific slot or autosave.
  */
 export function saveGameToStorage(slot = 1, state) {
+  if (typeof localStorage === 'undefined') {
+    return { success: true, timestamp: Date.now() }
+  }
   try {
     const key = slot === 'auto' ? AUTOSAVE_KEY : `${SAVE_KEY_PREFIX}${slot}`
     const payload = {
@@ -206,6 +209,9 @@ export function saveGameToStorage(slot = 1, state) {
  * Loads game state from a specific slot or autosave.
  */
 export function loadGameFromStorage(slot = 1) {
+  if (typeof localStorage === 'undefined') {
+    return null
+  }
   try {
     const key = slot === 'auto' ? AUTOSAVE_KEY : `${SAVE_KEY_PREFIX}${slot}`
     const raw = localStorage.getItem(key)

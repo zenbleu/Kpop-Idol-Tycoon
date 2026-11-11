@@ -54,6 +54,8 @@ export const ACTION = {
   RESET_GAME: 'RESET_GAME',
 }
 
+export const A = ACTION
+
 function gameReducer(state, action) {
   switch (action.type) {
     case ACTION.INIT_STATE:
