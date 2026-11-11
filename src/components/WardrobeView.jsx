@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useGame, ACTION } from '../game/state.jsx'
 import { WARDROBE_ITEMS, formatMoney } from '../game/balance.js'
 import { playSfx } from '../game/audio.js'
+import Modal from './ui/Modal.jsx'
 
 export default function WardrobeView() {
   const { state, dispatch } = useGame()
@@ -227,101 +228,111 @@ export default function WardrobeView() {
 
       {/* EQUIP TARGET MODAL */}
       {equipItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1c1236] border-2 border-[#5d3b9e] rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#3d276b] mb-4">
-              <h3 className="text-sm font-bold text-yellow-300 font-pixel">
-                EQUIP: {equipItem.name}
-              </h3>
+        <Modal
+          isOpen={!!equipItem}
+          onClose={() => setEquipItem(null)}
+          title={`EQUIP OUTFIT: ${equipItem.name}`}
+          subtitle="Equip this concept outfit to apply visual and performance score enhancements"
+          icon="👗"
+          size="sm"
+          borderColor="border-pink-500"
+          footer={
+            <div className="flex justify-end gap-2.5">
               <button
+                type="button"
                 onClick={() => setEquipItem(null)}
-                className="text-purple-400 hover:text-white font-pixel text-sm"
+                className="px-3.5 py-1.5 rounded-lg text-xs bg-[#241744] hover:bg-[#342260] text-purple-200 border border-purple-500/40"
               >
-                ✕
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEquip}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white border border-pink-400 shadow"
+              >
+                Confirm Equip
               </button>
             </div>
-
-            <p className="text-xs text-purple-200 font-pixel mb-4 leading-relaxed">
-              Equip this outfit to a group or individual idol to apply visual and performance score enhancements.
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-pixel text-purple-200 mb-1">
-                  EQUIP TARGET
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTargetType('group')
-                      setTargetId(state.groups[0]?.id || '')
-                    }}
-                    className={`py-2 rounded-lg border text-xs font-pixel ${
-                      targetType === 'group' ? 'bg-pink-900/70 border-pink-400 text-white' : 'bg-[#241744] border-[#442f70] text-purple-300'
-                    }`}
-                  >
-                    Entire Group
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTargetType('idol')
-                      setTargetId(state.idols[0]?.id || '')
-                    }}
-                    className={`py-2 rounded-lg border text-xs font-pixel ${
-                      targetType === 'idol' ? 'bg-pink-900/70 border-pink-400 text-white' : 'bg-[#241744] border-[#442f70] text-purple-300'
-                    }`}
-                  >
-                    Individual Idol
-                  </button>
-                </div>
+          }
+        >
+          <div className="space-y-3.5 text-xs">
+            <div>
+              <label className="block text-[10px] text-purple-200 mb-1 font-bold">
+                EQUIP TARGET TYPE
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetType('group')
+                    setTargetId(state.groups[0]?.id || '')
+                  }}
+                  className={`py-2 rounded-lg border text-xs font-pixel ${
+                    targetType === 'group' ? 'bg-pink-900/70 border-pink-400 text-white font-bold' : 'bg-[#241744] border-[#442f70] text-purple-300'
+                  }`}
+                >
+                  Entire Group
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetType('idol')
+                    setTargetId(state.idols[0]?.id || '')
+                  }}
+                  className={`py-2 rounded-lg border text-xs font-pixel ${
+                    targetType === 'idol' ? 'bg-pink-900/70 border-pink-400 text-white font-bold' : 'bg-[#241744] border-[#442f70] text-purple-300'
+                  }`}
+                >
+                  Individual Idol
+                </button>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-pixel text-purple-200 mb-1">
-                  SELECT {targetType.toUpperCase()}
-                </label>
-                {targetType === 'group' ? (
+            <div>
+              <label className="block text-[10px] text-purple-200 mb-1 font-bold">
+                SELECT {targetType.toUpperCase()}
+              </label>
+              {targetType === 'group' ? (
+                state.groups?.length === 0 ? (
+                  <p className="text-[10px] text-amber-300 bg-amber-950/40 p-2 rounded border border-amber-600/30">
+                    No active groups. Form a group first or equip to an individual idol.
+                  </p>
+                ) : (
                   <select
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
-                    className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
+                    className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs focus:outline-none focus:border-pink-400"
                   >
                     {state.groups?.map(g => (
                       <option key={g.id} value={g.id}>{g.name}</option>
                     ))}
                   </select>
+                )
+              ) : (
+                state.idols?.length === 0 ? (
+                  <p className="text-[10px] text-amber-300 bg-amber-950/40 p-2 rounded border border-amber-600/30">
+                    No idols recruited. Scout talent in Auditions first.
+                  </p>
                 ) : (
                   <select
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
-                    className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
+                    className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs focus:outline-none focus:border-pink-400"
                   >
                     {state.idols?.map(i => (
                       <option key={i.id} value={i.id}>{i.stageName || i.name}</option>
                     ))}
                   </select>
-                )}
-              </div>
+                )
+              )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[#3d276b] mt-5">
-              <button
-                onClick={() => setEquipItem(null)}
-                className="btn-secondary text-xs font-pixel py-2 px-4"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={handleConfirmEquip}
-                className="btn-primary text-xs font-pixel py-2 px-5"
-              >
-                CONFIRM EQUIP
-              </button>
+            <div className="bg-[#120b24] p-2.5 rounded-xl border border-[#3b2462] flex items-center justify-between text-[10px]">
+              <span className="text-purple-300">Stat Enhancements:</span>
+              <span className="text-yellow-300 font-bold">+{equipItem.visualBonus} Visual · +{equipItem.qualityBonus} Quality</span>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   )

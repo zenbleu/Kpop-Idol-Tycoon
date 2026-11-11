@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { playSfx } from '../game/audio.js'
+import Modal from './ui/Modal.jsx'
 
 export default function TutorialModal({ onClose }) {
   const [page, setPage] = useState(0)
@@ -91,32 +92,16 @@ export default function TutorialModal({ onClose }) {
   const current = pages[page]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn">
-      <div className="bg-[#1c1236] border-2 border-pink-500 rounded-3xl p-6 max-w-lg w-full shadow-2xl">
-        <div className="flex items-center justify-between pb-3 border-b border-[#3d276b] mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">{current.icon}</span>
-            <h3 className="text-sm font-bold text-yellow-300 font-pixel">
-              {current.title}
-            </h3>
-          </div>
-          <button
-            onClick={() => {
-              playSfx('click')
-              onClose()
-            }}
-            className="text-purple-400 hover:text-white font-pixel text-sm"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="min-h-[190px]">
-          {current.content}
-        </div>
-
-        {/* Footer controls */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#3d276b] mt-4">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={current.title}
+      subtitle={`Player Guide • Page ${page + 1} of ${pages.length}`}
+      icon={current.icon}
+      size="md"
+      borderColor="border-pink-500"
+      footer={
+        <div className="flex items-center justify-between w-full">
           <div className="flex gap-1.5">
             {pages.map((_, i) => (
               <div
@@ -131,11 +116,12 @@ export default function TutorialModal({ onClose }) {
           <div className="flex gap-2">
             {page > 0 && (
               <button
+                type="button"
                 onClick={() => {
                   playSfx('click')
                   setPage(p => p - 1)
                 }}
-                className="btn-secondary text-xs font-pixel py-2 px-3"
+                className="btn-secondary text-xs font-pixel py-1.5 px-3"
               >
                 ← PREV
               </button>
@@ -143,28 +129,34 @@ export default function TutorialModal({ onClose }) {
 
             {page < pages.length - 1 ? (
               <button
+                type="button"
                 onClick={() => {
                   playSfx('click')
                   setPage(p => p + 1)
                 }}
-                className="btn-primary text-xs font-pixel py-2 px-4"
+                className="btn-primary text-xs font-pixel py-1.5 px-4"
               >
                 NEXT →
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   playSfx('cheer')
                   onClose()
                 }}
-                className="btn-primary text-xs font-pixel py-2 px-4"
+                className="btn-primary text-xs font-pixel py-1.5 px-4"
               >
                 LET'S PRODUCE! 🚀
               </button>
             )}
           </div>
         </div>
+      }
+    >
+      <div className="min-h-[190px]">
+        {current.content}
       </div>
-    </div>
+    </Modal>
   )
 }

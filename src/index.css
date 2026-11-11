@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ============================================================
    BL PRODUCTION TYCOON — Global Theme
    Dark purple / hot pink / gold pixel-art aesthetic
@@ -88,14 +90,7 @@ button {
   font-family: 'Press Start 2P', monospace;
   cursor: pointer;
   color: var(--white);
-  background: #3A2666;
-  border: 3px solid var(--shadow);
-  box-shadow: 0 4px 0 var(--shadow);
-  padding: 10px 12px;
-  font-size: 11px;
-  text-align: left;
-  min-height: var(--touch-min);
-  min-width: var(--touch-min);
+  text-align: center;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s;
   -webkit-user-select: none;
   user-select: none;
@@ -464,10 +459,7 @@ body.no-scanlines::after { opacity: 0 !important; }
 
 /* ---------- Body lock when modal open ---------- */
 body.modal-open {
-  overflow: hidden;
-  /* prevent bounce on iOS */
-  position: fixed;
-  width: 100%;
+  overflow: hidden !important;
 }
 
 /* ---------- Safe-area insets (notch / home-bar) ---------- */

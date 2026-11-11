@@ -1,30 +1,41 @@
+/**
+ * ConcertsView.jsx — Modal-First Concert & Live Events Division.
+ *
+ * Level 1: Main tab is a clean Live Events Overview displaying concert statistics,
+ *          available venues catalog summary, and clear entry points to plan events.
+ * Level 2: Dedicated Modals for Planning a Single Concert, Launching a Multi-City World Tour,
+ *          and Hosting the Grand Agency All-Star Festival.
+ */
+
 import React, { useState } from 'react'
 import { useGame, ACTION } from '../game/state.jsx'
 import { CONCERT_VENUES, formatMoney } from '../game/balance.js'
 import { calculateConcertAttendance } from '../game/concerts.js'
 import { playSfx } from '../game/audio.js'
+import Modal from './ui/Modal.jsx'
 
 export default function ConcertsView() {
   const { state, dispatch } = useGame()
 
-  const [activeTab, setActiveTab] = useState('single') // 'single', 'tour', 'grand'
+  // Modal-First triggers
+  const [showConcertModal, setShowConcertModal] = useState(false)
+  const [showTourModal, setShowTourModal] = useState(false)
+  const [showGrandModal, setShowGrandModal] = useState(false)
+
+  // Single Concert form state
   const [targetType, setTargetType] = useState('group') // 'group' or 'solo'
   const [targetId, setTargetId] = useState(state.groups[0]?.id || '')
   const [selectedVenueId, setSelectedVenueId] = useState('hall_small')
   const [ticketPrice, setTicketPrice] = useState(65_000)
   const [marketingBudget, setMarketingBudget] = useState(10_000_000)
 
-  // Tour state
+  // Tour form state
   const [tourGroupName, setTourGroupName] = useState(state.groups[0]?.id || '')
   const [tourStops, setTourStops] = useState(3)
   const [tourTitle, setTourTitle] = useState('WORLDWIDE DOMINATION TOUR')
 
-  // Result modal
-  const [concertResult, setConcertResult] = useState(null)
-
   const groupOptions = state.groups || []
   const soloOptions = state.idols.filter(i => i.isSolo)
-
   const selectedVenue = CONCERT_VENUES.find(v => v.id === selectedVenueId) || CONCERT_VENUES[0]
 
   // Get selected target entity
@@ -100,6 +111,7 @@ export default function ConcertsView() {
         incomeDistribution,
       },
     })
+    setShowConcertModal(false)
   }
 
   const handleLaunchTour = () => {
@@ -136,9 +148,9 @@ export default function ConcertsView() {
         companyReputation: state.companyReputation || 'National',
       },
     })
+    setShowTourModal(false)
   }
 
-  // Company Grand Concert
   const handleGrandConcert = () => {
     if (state.idols.length === 0) return
     const grandCost = 120_000_000
@@ -169,67 +181,140 @@ export default function ConcertsView() {
         incomeDistribution: { companyPercent: 80, groupPercent: 20 },
       },
     })
+    setShowGrandModal(false)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1e1338] border-2 border-[#543b8a] p-4 rounded-xl shadow-lg">
+    <div className="space-y-4 font-pixel">
+      {/* ── LEVEL 1: Main Tab Overview Header ──────────────────────────── */}
+      <div className="bg-[#1e1338] border-2 border-[#543b8a] p-3.5 sm:p-4 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-300 font-pixel">
-            LIVE CONCERTS & WORLD TOURS
-          </h2>
-          <p className="text-xs text-purple-200 mt-1 font-pixel leading-relaxed">
-            Rent high-capacity arenas, set dynamic ticket prices, coordinate global tour legs, and headline agency-wide showcases.
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏟️</span>
+            <h2 className="text-sm sm:text-base font-bold text-white">
+              LIVE CONCERTS & WORLD TOURS OVERVIEW
+            </h2>
+          </div>
+          <p className="text-[10px] text-purple-200 mt-0.5">
+            Arena tours & showcase events. Completed: <strong className="text-yellow-300">{state.concertsCompleted || 0} Shows</strong>. Configure live events in modals.
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex items-center gap-2">
+        {/* Modal Entry Points */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setActiveTab('single')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-pixel border transition-all ${
-              activeTab === 'single'
-                ? 'bg-yellow-500 border-yellow-300 text-black font-bold shadow-md'
-                : 'bg-[#241744] border-[#442f70] text-purple-300 hover:border-yellow-500/40'
-            }`}
+            type="button"
+            onClick={() => {
+              setShowConcertModal(true)
+              playSfx('click')
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-yellow-500 hover:bg-yellow-400 text-black border border-yellow-300 shadow active:scale-95"
           >
-            Live Concert
+            + Plan Concert
           </button>
           <button
-            onClick={() => setActiveTab('tour')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-pixel border transition-all ${
-              activeTab === 'tour'
-                ? 'bg-yellow-500 border-yellow-300 text-black font-bold shadow-md'
-                : 'bg-[#241744] border-[#442f70] text-purple-300 hover:border-yellow-500/40'
-            }`}
+            type="button"
+            onClick={() => {
+              setShowTourModal(true)
+              playSfx('click')
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white border border-pink-400 shadow active:scale-95"
           >
-            World Tour
+            + World Tour
           </button>
           <button
-            onClick={() => setActiveTab('grand')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-pixel border transition-all ${
-              activeTab === 'grand'
-                ? 'bg-yellow-500 border-yellow-300 text-black font-bold shadow-md'
-                : 'bg-[#241744] border-[#442f70] text-purple-300 hover:border-yellow-500/40'
-            }`}
+            type="button"
+            onClick={() => {
+              setShowGrandModal(true)
+              playSfx('click')
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#2d1b4e] hover:bg-[#3d2668] text-yellow-300 border border-yellow-500/40 shadow active:scale-95"
           >
-            Agency Showcase
+            + All-Star Festival
           </button>
         </div>
       </div>
 
-      {/* SINGLE CONCERT TAB */}
-      {activeTab === 'single' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Cols: Setup */}
-          <div className="lg:col-span-2 space-y-5 bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-5 shadow-xl">
+      {/* ── LEVEL 1: Venues & Tours Catalog Summary ────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {CONCERT_VENUES.map(venue => (
+          <div
+            key={venue.id}
+            onClick={() => {
+              setSelectedVenueId(venue.id)
+              setShowConcertModal(true)
+              playSfx('click')
+            }}
+            className="bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-3.5 shadow-md hover:border-yellow-400 cursor-pointer transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <strong className="text-xs text-white">{venue.name}</strong>
+                <span className="text-[9px] text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-1.5 py-0.2 rounded font-bold">
+                  {venue.capacity.toLocaleString()} seats
+                </span>
+              </div>
+              <p className="text-[9px] text-purple-300 mt-1">
+                Standard acoustic staging & dynamic ticketing.
+              </p>
+              <div className="mt-2 text-[10px] text-yellow-300 bg-[#120b24] p-2 rounded-lg border border-[#3b2462] flex justify-between">
+                <span className="text-purple-400 text-[9px]">Lease Cost:</span>
+                <strong>{formatMoney(venue.rentalCost)}</strong>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="mt-3 w-full py-1.5 rounded-lg text-[9px] font-bold bg-[#241744] hover:bg-yellow-500 hover:text-black text-purple-200 border border-purple-500/40 transition-colors text-center"
+            >
+              Book Venue →
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── LEVEL 2: PLAN CONCERT MODAL ────────────────────────────────── */}
+      {showConcertModal && (
+        <Modal
+          isOpen={showConcertModal}
+          onClose={() => setShowConcertModal(false)}
+          title="PLAN ARENA CONCERT"
+          subtitle="Configure artist, venue lease, ticket price, and marketing"
+          icon="🏟️"
+          size="xl"
+          borderColor="border-yellow-500"
+          footer={
+            <div className="flex justify-between items-center gap-3">
+              <div className="text-[10px]">
+                <span>Est. Net: </span>
+                <strong className={forecastNet >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                  {formatMoney(forecastNet)}
+                </strong>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConcertModal(false)}
+                  className="px-3.5 py-1.5 rounded-lg text-xs bg-[#241744] text-purple-200 border border-purple-500/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleHoldConcert}
+                  disabled={state.money < forecastExpenses}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-800 disabled:text-gray-500 text-black border border-yellow-300 shadow"
+                >
+                  Hold Concert ({formatMoney(forecastExpenses)})
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <div className="space-y-3.5 text-xs">
             {/* Target Select */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-pixel text-purple-200 mb-1">
-                  PERFORMER TYPE
-                </label>
+                <label className="block text-[10px] text-purple-200 mb-1">PERFORMER TYPE</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -237,9 +322,9 @@ export default function ConcertsView() {
                       setTargetType('group')
                       setTargetId(groupOptions[0]?.id || '')
                     }}
-                    className={`py-2 px-3 rounded-lg border text-xs font-pixel ${
+                    className={`py-1.5 px-3 rounded-lg border text-xs ${
                       targetType === 'group'
-                        ? 'bg-pink-900/70 border-pink-400 text-white'
+                        ? 'bg-pink-900/70 border-pink-400 text-white font-bold'
                         : 'bg-[#241744] border-[#442f70] text-purple-300'
                     }`}
                   >
@@ -251,9 +336,9 @@ export default function ConcertsView() {
                       setTargetType('solo')
                       setTargetId(soloOptions[0]?.id || '')
                     }}
-                    className={`py-2 px-3 rounded-lg border text-xs font-pixel ${
+                    className={`py-1.5 px-3 rounded-lg border text-xs ${
                       targetType === 'solo'
-                        ? 'bg-pink-900/70 border-pink-400 text-white'
+                        ? 'bg-pink-900/70 border-pink-400 text-white font-bold'
                         : 'bg-[#241744] border-[#442f70] text-purple-300'
                     }`}
                   >
@@ -263,13 +348,11 @@ export default function ConcertsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-pixel text-purple-200 mb-1">
-                  HEADLINING ARTIST
-                </label>
+                <label className="block text-[10px] text-purple-200 mb-1">HEADLINING ARTIST</label>
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
+                  className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-2.5 py-1.5 text-white text-xs"
                 >
                   {targetType === 'group' ? (
                     groupOptions.map(g => (
@@ -286,46 +369,34 @@ export default function ConcertsView() {
 
             {/* Venue Selector */}
             <div>
-              <label className="block text-xs font-pixel text-purple-200 mb-2">
-                SELECT CONCERT VENUE
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block text-[10px] text-purple-200 mb-1.5">SELECT VENUE</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {CONCERT_VENUES.map(venue => {
                   const isSelected = selectedVenueId === venue.id
                   return (
                     <div
                       key={venue.id}
-                      onClick={() => {
-                        setSelectedVenueId(venue.id)
-                        playSfx('click')
-                      }}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      onClick={() => setSelectedVenueId(venue.id)}
+                      className={`p-2 rounded-xl border cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-yellow-950/70 border-yellow-400 shadow-md'
+                          ? 'bg-yellow-950/70 border-yellow-400 shadow'
                           : 'bg-[#241744] border-[#442f70] hover:border-purple-400'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white font-pixel">{venue.name}</span>
-                        <span className="text-[10px] font-pixel text-yellow-300">
-                          {venue.capacity.toLocaleString()} seats
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-purple-300 font-pixel mt-1 flex justify-between">
-                        <span>Rental: {formatMoney(venue.rentalCost)}</span>
-                      </div>
+                      <strong className="text-[10px] text-white block truncate">{venue.name}</strong>
+                      <span className="text-[8px] text-yellow-300">{venue.capacity.toLocaleString()} seats</span>
                     </div>
                   )
                 })}
               </div>
             </div>
 
-            {/* Sliders: Ticket Price & Marketing */}
-            <div className="space-y-4 bg-[#120b24] p-4 rounded-xl border border-[#3b2462]">
+            {/* Sliders */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#120b24] p-3 rounded-xl border border-[#3b2462]">
               <div>
-                <div className="flex justify-between text-xs font-pixel text-purple-200 mb-1">
+                <div className="flex justify-between text-[10px] text-purple-200 mb-1">
                   <span>Ticket Price:</span>
-                  <span className="text-yellow-300 font-bold">{formatMoney(ticketPrice)} / ticket</span>
+                  <strong className="text-yellow-300">{formatMoney(ticketPrice)}</strong>
                 </div>
                 <input
                   type="range"
@@ -336,16 +407,12 @@ export default function ConcertsView() {
                   onChange={(e) => setTicketPrice(Number(e.target.value))}
                   className="w-full accent-yellow-400 cursor-pointer"
                 />
-                <div className="flex justify-between text-[9px] text-purple-400 font-pixel mt-0.5">
-                  <span>₩30,000 (Affordable)</span>
-                  <span>₩250,000 (VIP Premium)</span>
-                </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-pixel text-purple-200 mb-1">
-                  <span>Marketing & Promotion:</span>
-                  <span className="text-emerald-400 font-bold">{formatMoney(marketingBudget)}</span>
+                <div className="flex justify-between text-[10px] text-purple-200 mb-1">
+                  <span>Marketing:</span>
+                  <strong className="text-emerald-400">{formatMoney(marketingBudget)}</strong>
                 </div>
                 <input
                   type="range"
@@ -356,183 +423,148 @@ export default function ConcertsView() {
                   onChange={(e) => setMarketingBudget(Number(e.target.value))}
                   className="w-full accent-emerald-400 cursor-pointer"
                 />
-                <div className="flex justify-between text-[9px] text-purple-400 font-pixel mt-0.5">
-                  <span>₩2M (Social Media)</span>
-                  <span>₩50M (Billboards & TV Ads)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Col: Forecast & Execution */}
-          <div className="space-y-4 bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-yellow-300 font-pixel mb-3">
-                BOX OFFICE FORECAST
-              </h3>
-
-              <div className="space-y-2.5 text-xs font-pixel bg-[#120b24] p-3.5 rounded-xl border border-[#3b2462] mb-4">
-                <div className="flex justify-between text-purple-300">
-                  <span>Estimated Attendance:</span>
-                  <span className={`font-bold ${forecast.isSoldOut ? 'text-emerald-400' : 'text-white'}`}>
-                    {forecast.ticketsSold.toLocaleString()} / {selectedVenue.capacity.toLocaleString()} ({forecast.attendanceRate}%)
-                  </span>
-                </div>
-                {forecast.isSoldOut && (
-                  <div className="text-[9px] font-pixel text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 p-1 rounded text-center">
-                    🔥 PROJECTED SOLD OUT EVENT!
-                  </div>
-                )}
-                <div className="flex justify-between text-purple-300">
-                  <span>Est. Ticket Gross:</span>
-                  <span className="text-white font-bold">{formatMoney(forecast.ticketsSold * ticketPrice)}</span>
-                </div>
-                <div className="flex justify-between text-purple-300">
-                  <span>Est. Merchandise:</span>
-                  <span className="text-purple-200">{formatMoney(Math.round(forecast.ticketsSold * ticketPrice * 0.18))}</span>
-                </div>
-                <div className="flex justify-between text-purple-300">
-                  <span>Total Expenses:</span>
-                  <span className="text-red-400 font-bold">{formatMoney(forecastExpenses)}</span>
-                </div>
-                <div className="pt-2 border-t border-[#37235a] flex justify-between items-center text-sm">
-                  <span className="text-yellow-300 font-bold">Est. Net Profit:</span>
-                  <span className={`font-bold ${forecastNet >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatMoney(forecastNet)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-[#241744] rounded-xl border border-[#442f70] text-xs font-pixel space-y-1">
-                <div className="flex justify-between text-purple-300">
-                  <span>Agency Share ({incomeDistribution.companyPercent}%):</span>
-                  <span className="text-yellow-300 font-bold">{formatMoney(companyForecast)}</span>
-                </div>
-                <div className="flex justify-between text-purple-300">
-                  <span>Artist Payout ({incomeDistribution.groupPercent}%):</span>
-                  <span className="text-pink-300 font-bold">{formatMoney(forecastNet - companyForecast)}</span>
-                </div>
               </div>
             </div>
 
-            <button
-              onClick={handleHoldConcert}
-              disabled={state.money < forecastExpenses}
-              className="w-full btn-primary text-xs font-pixel py-3 shadow-lg disabled:opacity-50"
-            >
-              HOLD CONCERT ({formatMoney(forecastExpenses)})
-            </button>
+            {/* Forecast Summary */}
+            <div className="bg-[#120b24] p-3 rounded-xl border border-[#3b2462] space-y-1.5 text-[10px]">
+              <div className="flex justify-between text-purple-300">
+                <span>Estimated Turnout:</span>
+                <strong className={forecast.isSoldOut ? 'text-emerald-400' : 'text-white'}>
+                  {forecast.ticketsSold.toLocaleString()} / {selectedVenue.capacity.toLocaleString()} ({forecast.attendanceRate}%) {forecast.isSoldOut ? '🔥 SOLD OUT!' : ''}
+                </strong>
+              </div>
+              <div className="flex justify-between text-purple-300">
+                <span>Est. Gross Revenue:</span>
+                <strong className="text-white">{formatMoney(forecastGross)}</strong>
+              </div>
+              <div className="flex justify-between text-purple-300">
+                <span>Venue Lease & Promotion:</span>
+                <strong className="text-red-400">{formatMoney(forecastExpenses)}</strong>
+              </div>
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* WORLD TOUR TAB */}
-      {activeTab === 'tour' && (
-        <div className="bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-6 shadow-xl space-y-5">
-          <div className="max-w-2xl">
-            <h3 className="text-base font-bold text-yellow-300 font-pixel mb-1">
-              MULTI-CITY WORLD TOUR EXPEDITION
-            </h3>
-            <p className="text-xs text-purple-200 font-pixel leading-relaxed">
-              Embark on an international concert tour spanning prestigious arenas across Seoul, Tokyo, Bangkok, Los Angeles, and London. Massive revenue potential with substantial fatigue impact.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ── LEVEL 2: WORLD TOUR MODAL ──────────────────────────────────── */}
+      {showTourModal && (
+        <Modal
+          isOpen={showTourModal}
+          onClose={() => setShowTourModal(false)}
+          title="LAUNCH MULTI-CITY WORLD TOUR"
+          subtitle="International stadium tour across Asia, Americas, and Europe"
+          icon="✈️"
+          size="lg"
+          borderColor="border-pink-500"
+          footer={
+            <div className="flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowTourModal(false)}
+                className="px-3.5 py-1.5 rounded-lg text-xs bg-[#241744] text-purple-200 border border-purple-500/40"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleLaunchTour}
+                disabled={state.money < (tourStops * 40_000_000) || groupOptions.length === 0}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white border border-pink-400 shadow"
+              >
+                Launch Tour ({formatMoney(tourStops * 40_000_000)})
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-3 text-xs">
             <div>
-              <label className="block text-xs font-pixel text-purple-200 mb-1">TOUR TITLE</label>
+              <label className="block text-[10px] text-purple-200 mb-1">TOUR TITLE</label>
               <input
                 type="text"
                 value={tourTitle}
                 onChange={(e) => setTourTitle(e.target.value)}
                 placeholder="WORLD TOUR 2026"
-                className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
+                className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-2.5 py-1.5 text-white text-xs"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-pixel text-purple-200 mb-1">HEADLINE GROUP</label>
-              <select
-                value={tourGroupName}
-                onChange={(e) => setTourGroupName(e.target.value)}
-                className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
-              >
-                {groupOptions.map(g => (
-                  <option key={g.id} value={g.id}>{g.name} (Fanbase: {g.fanbase?.toLocaleString()})</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] text-purple-200 mb-1">HEADLINE GROUP</label>
+                <select
+                  value={tourGroupName}
+                  onChange={(e) => setTourGroupName(e.target.value)}
+                  className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-2.5 py-1.5 text-white text-xs"
+                >
+                  {groupOptions.map(g => (
+                    <option key={g.id} value={g.id}>{g.name} (Fanbase: {g.fanbase?.toLocaleString()})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-purple-200 mb-1">TOUR STOPS</label>
+                <select
+                  value={tourStops}
+                  onChange={(e) => setTourStops(Number(e.target.value))}
+                  className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-2.5 py-1.5 text-white text-xs"
+                >
+                  <option value={3}>3 Cities (Asia Arena Leg)</option>
+                  <option value={5}>5 Cities (Worldwide Stadium Leg)</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-pixel text-purple-200 mb-1">TOUR LENGTH</label>
-              <select
-                value={tourStops}
-                onChange={(e) => setTourStops(Number(e.target.value))}
-                className="w-full bg-[#120b24] border border-[#52338c] rounded-lg px-3 py-2 text-white font-pixel text-xs"
-              >
-                <option value={3}>3 Cities (Asian Leg)</option>
-                <option value={5}>5 Cities (Global Arena Leg)</option>
-              </select>
+            <div className="bg-[#120b24] p-3 rounded-xl border border-[#3b2462] text-[10px] text-purple-300">
+              <div>Logistics & Arena Leases: <strong className="text-yellow-400">{formatMoney(tourStops * 40_000_000)}</strong></div>
+              <p className="text-[9px] text-purple-400 mt-1">Multi-city tour generates tremendous fanbase expansion and merchandise revenue.</p>
             </div>
           </div>
-
-          <div className="bg-[#120b24] p-4 rounded-xl border border-[#37235a] flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="text-xs font-pixel text-purple-300 space-y-1">
-              <div>Total Logistics Budget: <span className="text-yellow-400 font-bold">{formatMoney(tourStops * 40_000_000)}</span></div>
-              <div className="text-[10px] text-purple-400">Includes arena leases, international crew flights, and local marketing.</div>
-            </div>
-
-            <button
-              onClick={handleLaunchTour}
-              disabled={state.money < (tourStops * 40_000_000) || groupOptions.length === 0}
-              className="btn-primary text-xs font-pixel py-3 px-6 shadow-lg disabled:opacity-50"
-            >
-              LAUNCH WORLD TOUR
-            </button>
-          </div>
-        </div>
+        </Modal>
       )}
 
-      {/* AGENCY SHOWCASE TAB */}
-      {activeTab === 'grand' && (
-        <div className="bg-[#1e1338] border-2 border-yellow-500/80 rounded-2xl p-6 shadow-xl space-y-5">
-          <div className="max-w-2xl">
-            <div className="inline-block px-2.5 py-1 rounded bg-yellow-500/20 text-yellow-300 font-pixel text-[10px] mb-2 border border-yellow-500/40">
-              AGENCY FLAGSHIP SPECTACULAR
+      {/* ── LEVEL 2: GRAND ALL-STAR FESTIVAL MODAL ─────────────────────── */}
+      {showGrandModal && (
+        <Modal
+          isOpen={showGrandModal}
+          onClose={() => setShowGrandModal(false)}
+          title={`${state.companyName?.toUpperCase()} ALL-STAR FESTIVAL`}
+          subtitle="Monumental 50,000-seat Olympic Stadium showcase"
+          icon="👑"
+          size="md"
+          borderColor="border-yellow-500"
+          footer={
+            <div className="flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowGrandModal(false)}
+                className="px-3.5 py-1.5 rounded-lg text-xs bg-[#241744] text-purple-200 border border-purple-500/40"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGrandConcert}
+                disabled={state.money < 120_000_000 || (state.idols?.length || 0) === 0}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-yellow-500 hover:bg-yellow-400 text-black border border-yellow-300 shadow"
+              >
+                Headline Festival (₩120M)
+              </button>
             </div>
-            <h3 className="text-lg font-bold text-white font-pixel mb-1">
-              {state.companyName?.toUpperCase()} GRAND ALL-STAR FESTIVAL
-            </h3>
-            <p className="text-xs text-purple-200 font-pixel leading-relaxed">
+          }
+        >
+          <div className="space-y-3 text-xs leading-relaxed text-purple-200">
+            <p>
               Unite all trainees, boy groups, girl groups, and soloists onto one monumental 50,000-capacity Olympic Stadium stage. Drives massive brand prestige and company reputation.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#120b24] p-4 rounded-xl border border-[#3b2462] text-xs font-pixel">
-            <div>
-              <span className="text-purple-400">Total Participating Roster:</span>
-              <p className="text-yellow-300 font-bold text-sm mt-0.5">{state.idols?.length || 0} Idols</p>
-            </div>
-            <div>
-              <span className="text-purple-400">Venue:</span>
-              <p className="text-white font-bold text-sm mt-0.5">World Olympic Stadium (50k)</p>
-            </div>
-            <div>
-              <span className="text-purple-400">Production Investment:</span>
-              <p className="text-pink-300 font-bold text-sm mt-0.5">₩120,000,000</p>
+            <div className="bg-[#120b24] p-3 rounded-xl border border-[#3b2462] space-y-1 text-[10px]">
+              <div>• Total Participating Roster: <strong className="text-white">{state.idols?.length || 0} Idols</strong></div>
+              <div>• Staging & Broadcast Budget: <strong className="text-yellow-300">₩120,000,000</strong></div>
+              <div>• Venue: <strong className="text-pink-300">Olympic World Stadium (50,000 seats)</strong></div>
             </div>
           </div>
-
-          <div className="flex justify-end">
-            <button
-              onClick={handleGrandConcert}
-              disabled={state.money < 120_000_000 || (state.idols?.length || 0) === 0}
-              className="btn-primary text-xs font-pixel py-3 px-6 shadow-xl disabled:opacity-50"
-            >
-              HEADLINE GRAND AGENCY FESTIVAL (₩120M)
-            </button>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   )

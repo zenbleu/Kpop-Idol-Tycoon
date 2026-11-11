@@ -1,16 +1,30 @@
+/**
+ * SoloArtistsView.jsx — Modal-First Solo Artists Division.
+ *
+ * Level 1: Main tab is a clean overview of debuted soloists with name, tier,
+ *          popularity, fanbase, and group affiliation.
+ * Level 2: Dedicated Solo Artist Profile Modal displaying full stats breakdown,
+ *          biography, and solo management actions.
+ * Level 3: Debut Solo Artist modal & retirement confirmation modal.
+ */
+
 import React, { useState } from 'react'
 import { useGame, ACTION } from '../game/state.jsx'
 import { playSfx } from '../game/audio.js'
 import { getAssetPath } from '../lib/assets.js'
+import Modal from './ui/Modal.jsx'
 
 export default function SoloArtistsView() {
   const { state, dispatch } = useGame()
   const [selectedSoloIdol, setSelectedSoloIdol] = useState(null)
   const [showPromoteModal, setShowPromoteModal] = useState(false)
+  const [retireConfirmIdol, setRetireConfirmIdol] = useState(null)
 
-  // Eligible idols for solo debut: not currently promoting solo
   const soloArtists = state.idols.filter(i => i.isSolo)
   const candidateIdols = state.idols.filter(i => !i.isSolo)
+
+  // Active soloist synced with state
+  const activeSoloist = state.idols.find(i => i.id === selectedSoloIdol?.id) || selectedSoloIdol
 
   const handlePromoteToSolo = (idol) => {
     dispatch({
@@ -18,7 +32,6 @@ export default function SoloArtistsView() {
       idolId: idol.id,
       newStageName: idol.stageName || idol.name,
     })
-    // Set isSolo flag
     dispatch({
       type: ACTION.INIT_STATE,
       state: {
@@ -31,7 +44,7 @@ export default function SoloArtistsView() {
         } : i),
         toasts: [
           ...(state.toasts || []),
-          { id: Date.now(), message: `${idol.stageName || idol.name} launched as an official Solo Artist!`, variant: 'gold' },
+          { id: Date.now(), message: `${idol.stageName || idol.name} debuted as an official Solo Artist!`, variant: 'gold' },
         ],
       },
     })
@@ -55,61 +68,59 @@ export default function SoloArtistsView() {
       },
     })
     playSfx('buzz')
-    if (selectedSoloIdol?.id === idol.id) setSelectedSoloIdol(null)
+    setRetireConfirmIdol(null)
+    setSelectedSoloIdol(null)
   }
 
   return (
-    <div className="space-y-4">
-      {/* ── Level 1: Header Bar ──────────────────────────────────────── */}
+    <div className="space-y-4 font-pixel">
+      {/* ── LEVEL 1: Main Tab Header ───────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#1e1338] border-2 border-[#543b8a] p-3.5 sm:p-4 rounded-2xl shadow-xl">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xl">🌟</span>
-            <h2 className="text-base sm:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-300 font-pixel">
-              SOLO ARTISTS DIVISION
+            <h2 className="text-sm sm:text-base font-bold text-white">
+              SOLO ARTISTS DIVISION OVERVIEW
             </h2>
           </div>
-          <p className="text-[10px] text-purple-200 mt-0.5 font-pixel leading-relaxed">
-            Manage individual spotlight artists, exclusive solo releases, and personal brand loyalty.
+          <p className="text-[10px] text-purple-200 mt-0.5">
+            Active Soloists: <strong className="text-yellow-300">{soloArtists.length} Artists</strong> · Select an artist to inspect profile in modal
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-pixel text-yellow-300 bg-[#2d1b4e] px-3 py-2 rounded-lg border border-yellow-500/30 whitespace-nowrap">
-            Soloists: {soloArtists.length} Artists
-          </span>
-          <button
-            onClick={() => {
-              setShowPromoteModal(true)
-              playSfx('click')
-            }}
-            className="btn-primary text-xs font-pixel py-2 px-3 sm:px-4 shadow-md flex items-center gap-1.5 whitespace-nowrap"
-          >
-            + DEBUT SOLO ARTIST
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setShowPromoteModal(true)
+            playSfx('click')
+          }}
+          className="btn-primary text-xs py-2 px-3 sm:px-4 shadow-md flex items-center gap-1.5 whitespace-nowrap active:scale-95"
+        >
+          + Debut Solo Artist
+        </button>
       </div>
 
-      {/* ── Level 1: Solo Artists Cards Grid ─────────────────────────── */}
+      {/* ── LEVEL 1: Compact Solo Artists Overview Cards ───────────────── */}
       {soloArtists.length === 0 ? (
-        <div className="bg-[#1e1338]/80 border-2 border-dashed border-[#543b8a] rounded-2xl p-12 text-center">
-          <div className="text-5xl mb-4">🌟</div>
-          <h3 className="text-base font-bold text-white font-pixel mb-2">No Debuted Solo Artists</h3>
-          <p className="text-xs text-purple-300 font-pixel max-w-md mx-auto mb-6 leading-relaxed">
-            Cultivate standout talent with dedicated solo releases. Select an idol from your agency to debut as a Solo Artist!
+        <div className="bg-[#1e1338]/80 border-2 border-dashed border-[#543b8a] rounded-2xl p-10 text-center">
+          <div className="text-4xl mb-3">🌟</div>
+          <h3 className="text-sm font-bold text-white mb-1">No Debuted Solo Artists</h3>
+          <p className="text-xs text-purple-300 max-w-md mx-auto mb-5 leading-relaxed">
+            Spotlight a talented trainee or group member for individual releases, custom concepts, and personal stardom!
           </p>
           <button
+            type="button"
             onClick={() => {
               setShowPromoteModal(true)
               playSfx('click')
             }}
-            className="btn-primary text-xs font-pixel py-3 px-6"
+            className="btn-primary text-xs py-2.5 px-5"
           >
-            DEBUT FIRST SOLO ARTIST
+            + Debut First Solo Artist
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {soloArtists.map(artist => {
             const group = state.groups.find(g => g.id === artist.groupId)
 
@@ -120,40 +131,48 @@ export default function SoloArtistsView() {
                   setSelectedSoloIdol(artist)
                   playSfx('click')
                 }}
-                className="bg-[#1e1338] border-2 border-[#543b8a] rounded-xl p-3 shadow-md hover:border-yellow-400 cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between"
-                title="Click to view solo artist dossier and actions"
+                className="bg-[#1e1338] border-2 border-[#543b8a] rounded-2xl p-3.5 shadow-md hover:border-yellow-400 cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between"
+                title="Click to open solo artist profile modal"
               >
                 <div>
-                  <div className="flex items-start gap-2.5">
+                  {/* Header: Small Thumbnail + Stage Name + Tier */}
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-[#3b2762]">
                     <img
                       src={getAssetPath(artist.portrait)}
                       alt={artist.name}
-                      className="w-12 h-12 rounded-lg object-cover border-2 border-yellow-400/60 shadow flex-shrink-0"
+                      className="rounded-lg object-cover border border-yellow-400/60 shadow flex-shrink-0"
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        minWidth: '28px',
+                        minHeight: '28px',
+                        maxWidth: '28px',
+                        maxHeight: '28px',
+                        borderRadius: '6px',
+                        objectFit: 'cover',
+                      }}
                       onError={(e) => {
                         e.target.onerror = null
                         e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
                       }}
                     />
-                    <div className="flex-1 min-w-0 font-pixel">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold text-white truncate">
+                        <strong className="text-white text-xs truncate">
                           {artist.stageName || artist.name}
-                        </h3>
-                        <span className="text-[8px] font-pixel text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-1 py-0.2 rounded">
+                        </strong>
+                        <span className="text-[8px] text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-1 py-0.2 rounded font-bold">
                           {artist.tier}
                         </span>
                       </div>
-                      <p className="text-[9px] text-purple-300 truncate mt-0.5">
-                        {artist.name} · {artist.age}y
+                      <p className="text-[9px] text-purple-300 truncate">
+                        {artist.name} · {artist.specialty}
                       </p>
-                      <div className="text-[8px] text-yellow-300 truncate mt-0.5">
-                        {artist.specialty}
-                      </div>
                     </div>
                   </div>
 
-                  {/* Status chip */}
-                  <div className="mt-2 text-[8px] font-pixel">
+                  {/* Group Affiliation Status */}
+                  <div className="mt-2 text-[8px]">
                     <span className={`px-2 py-0.5 rounded border inline-block truncate max-w-full ${
                       group ? 'bg-purple-950/60 border-purple-500/40 text-purple-300' : 'bg-blue-950/60 border-blue-500/40 text-blue-300'
                     }`}>
@@ -161,22 +180,24 @@ export default function SoloArtistsView() {
                     </span>
                   </div>
 
-                  {/* Metrics */}
-                  <div className="mt-2 grid grid-cols-2 gap-1.5 bg-[#120b24] p-2 rounded-lg border border-[#37235a] text-[9px] font-pixel">
+                  {/* Metrics Strip */}
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 bg-[#120b24] p-2 rounded-xl border border-[#37235a] text-[9px]">
                     <div className="flex justify-between">
                       <span className="text-purple-400">Fanbase:</span>
-                      <span className="text-emerald-400 font-bold">{(artist.soloFanbase || 1500).toLocaleString()}</span>
+                      <strong className="text-emerald-400">{(artist.soloFanbase || 1500).toLocaleString()}</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-purple-400">Pop:</span>
-                      <span className="text-pink-300 font-bold">{artist.popularity || 15}/100</span>
+                      <strong className="text-pink-300">{artist.popularity || 15}/100</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-2.5 pt-2 border-t border-[#37235a] flex items-center justify-between text-[9px] font-pixel text-purple-300">
+                <div className="mt-2.5 pt-2 border-t border-[#37235a] flex items-center justify-between text-[9px] text-purple-300">
                   <span>Loyalty: <strong className="text-yellow-300">{artist.loyalty || 80}%</strong></span>
-                  <span className="text-pink-400 font-bold">Dossier →</span>
+                  <span className="text-pink-400 font-bold hover:underline">
+                    Dossier →
+                  </span>
                 </div>
               </div>
             )
@@ -184,155 +205,184 @@ export default function SoloArtistsView() {
         </div>
       )}
 
-      {/* ── Level 2 & 3: Selected Solo Artist Dossier Modal ──────────── */}
-      {selectedSoloIdol && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setSelectedSoloIdol(null)}
-        >
-          <div
-            className="bg-[#1c1236] border-2 border-yellow-500/80 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-[#3d276b]">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-pixel text-yellow-300 bg-yellow-950/80 px-2 py-0.5 rounded border border-yellow-500/40">
-                  {selectedSoloIdol.tier}-TIER
-                </span>
-                <h3 className="text-sm font-bold text-white font-pixel">
-                  {selectedSoloIdol.stageName || selectedSoloIdol.name}
-                </h3>
-              </div>
+      {/* ── LEVEL 2: DEDICATED SOLO ARTIST PROFILE MODAL ──────────────── */}
+      {activeSoloist && (
+        <Modal
+          isOpen={!!activeSoloist}
+          onClose={() => setSelectedSoloIdol(null)}
+          title={`SOLO ARTIST PROFILE: ${activeSoloist.stageName || activeSoloist.name}`}
+          subtitle={`${activeSoloist.tier}-Tier · Independent Spotlight Division`}
+          icon="⭐"
+          size="md"
+          borderColor="border-yellow-500"
+          footer={
+            <div className="flex items-center justify-between gap-3">
               <button
-                onClick={() => setSelectedSoloIdol(null)}
-                className="text-purple-400 hover:text-white font-pixel text-sm px-2 py-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Profile Hero: Balanced Portrait (w-20 h-20) */}
-            <div className="flex items-center gap-4 bg-[#120b24] p-3 rounded-xl border border-[#3b2462]">
-              <img
-                src={getAssetPath(selectedSoloIdol.portrait)}
-                alt={selectedSoloIdol.name}
-                className="w-20 h-20 rounded-xl object-cover border-2 border-yellow-400 shadow flex-shrink-0"
-                onError={(e) => {
-                  e.target.onerror = null
-                  e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
-                }}
-              />
-              <div className="font-pixel text-[10px] space-y-1">
-                <h4 className="text-xs font-bold text-white">{selectedSoloIdol.name}</h4>
-                <div className="text-purple-300">Age {selectedSoloIdol.age} · {selectedSoloIdol.gender}</div>
-                <div className="text-emerald-300">Potential: {selectedSoloIdol.potential}-Grade</div>
-                <div className="text-yellow-300">Fanbase: {(selectedSoloIdol.soloFanbase || 1500).toLocaleString()} fans</div>
-              </div>
-            </div>
-
-            {/* Core Stats Breakdown */}
-            <div className="space-y-1.5 text-[9px] font-pixel bg-[#120b24] p-3 rounded-xl border border-[#3b2462]">
-              <div className="text-[10px] text-pink-400 font-bold mb-1">SKILL ATTRIBUTES</div>
-              {['vocal', 'dance', 'rap', 'visual', 'charisma'].map(k => (
-                <div key={k} className="flex justify-between items-center text-purple-300">
-                  <span className="uppercase">{k}:</span>
-                  <span className="text-white font-bold">{selectedSoloIdol.stats?.[k] ?? 50} / 100</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Actions (Level 3) */}
-            <div className="flex justify-between items-center pt-2 border-t border-[#3d276b]">
-              <button
-                onClick={() => handleRetireSolo(selectedSoloIdol)}
-                className="px-3 py-1.5 rounded-lg text-xs font-pixel bg-red-950/70 hover:bg-red-900 text-red-300 border border-red-700/60 transition-colors"
+                type="button"
+                onClick={() => setRetireConfirmIdol(activeSoloist)}
+                className="px-3 py-1.5 rounded-lg text-xs bg-red-950/70 hover:bg-red-900 text-red-300 border border-red-700/60 transition-colors"
               >
                 Retire Solo Status
               </button>
               <button
+                type="button"
                 onClick={() => setSelectedSoloIdol(null)}
-                className="px-4 py-1.5 rounded-lg text-xs font-pixel bg-[#2d1b4e] hover:bg-[#3d2668] text-white border border-purple-500/40"
+                className="px-4 py-1.5 rounded-lg text-xs bg-[#2d1b4e] hover:bg-[#3d2668] text-white border border-purple-500/40"
               >
-                CLOSE
+                Close Profile
               </button>
+            </div>
+          }
+        >
+          {/* Hero Profile (Balanced Portrait) */}
+          <div className="flex items-center gap-3.5 bg-[#120b24] p-3 rounded-xl border border-[#3b2462]">
+            <img
+              src={getAssetPath(activeSoloist.portrait)}
+              alt={activeSoloist.name}
+              className="rounded-xl object-cover border-2 border-yellow-400 shadow flex-shrink-0"
+              style={{
+                width: '64px',
+                height: '64px',
+                minWidth: '64px',
+                minHeight: '64px',
+                maxWidth: '64px',
+                maxHeight: '64px',
+                borderRadius: '10px',
+                objectFit: 'cover',
+              }}
+              onError={(e) => {
+                e.target.onerror = null
+                e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
+              }}
+            />
+            <div className="text-[10px] space-y-1">
+              <h4 className="text-xs font-bold text-white">{activeSoloist.name}</h4>
+              <div className="text-purple-300">Age {activeSoloist.age} · {activeSoloist.gender} · {activeSoloist.nationality}</div>
+              <div className="text-emerald-300">Potential: {activeSoloist.potential}-Grade · Specialty: {activeSoloist.specialty}</div>
+              <div className="text-yellow-300">Solo Fanbase: {(activeSoloist.soloFanbase || 1500).toLocaleString()} fans</div>
             </div>
           </div>
-        </div>
+
+          {/* Skill Breakdown */}
+          <div className="space-y-1.5 text-[9px] bg-[#120b24] p-3 rounded-xl border border-[#3b2462]">
+            <div className="text-[10px] text-pink-400 font-bold mb-1">SKILL ATTRIBUTES</div>
+            {['vocal', 'dance', 'rap', 'visual', 'charisma'].map(k => (
+              <div key={k} className="flex justify-between items-center text-purple-300">
+                <span className="uppercase">{k}:</span>
+                <strong className="text-white">{activeSoloist.stats?.[k] ?? 50} / 100</strong>
+              </div>
+            ))}
+          </div>
+        </Modal>
       )}
 
-      {/* ── Level 3: Debut Solo Artist Modal ─────────────────────────── */}
+      {/* ── LEVEL 3: DEBUT SOLO ARTIST MODAL ───────────────────────────── */}
       {showPromoteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1c1236] border-2 border-[#5d3b9e] rounded-2xl p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#3d276b]">
-              <h3 className="text-sm font-bold text-yellow-300 font-pixel">
-                SELECT IDOL FOR SOLO DEBUT
-              </h3>
-              <button
-                onClick={() => setShowPromoteModal(false)}
-                className="text-purple-400 hover:text-white font-pixel text-sm px-2 py-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-purple-200 font-pixel leading-relaxed">
-              Choose an idol from your roster to launch as an official solo artist. Idols can maintain both group and solo activities simultaneously.
+        <Modal
+          isOpen={showPromoteModal}
+          onClose={() => setShowPromoteModal(false)}
+          title="DEBUT IDOL AS SOLO ARTIST"
+          subtitle="Select any idol to launch their solo career"
+          icon="✨"
+          size="lg"
+          borderColor="border-yellow-500"
+        >
+          <div className="space-y-3 text-xs">
+            <p className="text-purple-200 leading-relaxed text-[10px]">
+              Select an eligible idol from your roster to launch as an official solo artist. Idols can maintain both group and solo activities simultaneously.
             </p>
 
             {candidateIdols.length === 0 ? (
-              <p className="text-xs text-purple-300 font-pixel text-center py-6 bg-[#120b24] rounded-xl border border-[#3b2462]">
-                All eligible idols in the agency are already solo artists.
+              <p className="text-purple-300 text-center py-6 bg-[#120b24] rounded-xl border border-[#3b2462]">
+                All eligible idols in the agency are already debuted as soloists.
               </p>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto p-1">
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {candidateIdols.map(idol => (
                   <div
                     key={idol.id}
                     onClick={() => handlePromoteToSolo(idol)}
                     className="p-2.5 rounded-xl bg-[#241744] border border-[#442f70] hover:border-yellow-400 cursor-pointer flex items-center justify-between transition-colors shadow-sm"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <img
                         src={getAssetPath(idol.portrait)}
                         alt={idol.name}
-                        className="w-10 h-10 rounded-lg object-cover border border-purple-400/50 flex-shrink-0"
+                        className="rounded-lg object-cover border border-purple-400/50 flex-shrink-0"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          minWidth: '28px',
+                          minHeight: '28px',
+                          maxWidth: '28px',
+                          maxHeight: '28px',
+                          borderRadius: '6px',
+                          objectFit: 'cover',
+                        }}
                         onError={(e) => {
                           e.target.onerror = null
                           e.target.src = getAssetPath('/images/actors-portraits/Actor_01.jpg')
                         }}
                       />
-                      <div className="font-pixel">
+                      <div>
                         <div className="text-xs font-bold text-white">
                           {idol.stageName || idol.name}
                         </div>
                         <div className="text-[8px] text-purple-300 flex items-center gap-1.5 mt-0.5">
                           <span className="text-yellow-300">{idol.tier}-Tier</span>
                           <span>•</span>
-                          <span>{idol.age}y</span>
-                          <span>•</span>
                           <span>{idol.specialty}</span>
+                          <span>•</span>
+                          <span>Pot: {idol.potential}</span>
                         </div>
                       </div>
                     </div>
-                    <button className="px-2.5 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-[9px] font-pixel shadow">
-                      DEBUT
+                    <button
+                      type="button"
+                      className="px-2.5 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-[9px] shadow"
+                    >
+                      Debut Solo
                     </button>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        </Modal>
+      )}
 
-            <div className="pt-2 border-t border-[#3d276b] flex justify-end">
+      {/* ── LEVEL 3: RETIRE SOLO CONFIRMATION MODAL ────────────────────── */}
+      {retireConfirmIdol && (
+        <Modal
+          isOpen={!!retireConfirmIdol}
+          onClose={() => setRetireConfirmIdol(null)}
+          title="CONFIRM RETIREMENT OF SOLO STATUS"
+          icon="⚠️"
+          size="sm"
+          borderColor="border-red-500"
+          footer={
+            <div className="flex justify-end gap-2">
               <button
-                onClick={() => setShowPromoteModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-pixel bg-[#241744] text-purple-200 border border-purple-500/40"
+                type="button"
+                onClick={() => setRetireConfirmIdol(null)}
+                className="px-3 py-1.5 rounded-lg text-xs bg-[#241744] text-purple-200 border border-purple-500/40"
               >
-                CANCEL
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRetireSolo(retireConfirmIdol)}
+                className="btn-danger text-xs py-1.5 px-3.5 shadow"
+              >
+                Retire Solo
               </button>
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="text-xs text-purple-200 leading-relaxed">
+            Conclude solo career for <strong className="text-white">{retireConfirmIdol.stageName || retireConfirmIdol.name}</strong>? They can be re-promoted later at any time.
+          </p>
+        </Modal>
       )}
     </div>
   )

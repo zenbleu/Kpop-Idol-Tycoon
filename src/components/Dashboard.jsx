@@ -134,38 +134,38 @@ export default function Dashboard({ setScreen }) {
       )}
 
       {/* ── 4. Main Dashboard Grid (Productions, Trends, Schedules) ─── */}
-      <div className="dashboard-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Active Album Productions */}
-        <div className="panel">
-          <div className="panel-title flex items-center justify-between">
+        <div className="panel rounded-2xl border-2 border-[#543b8a] bg-[#1e1338] p-4 shadow-xl">
+          <div className="panel-title flex items-center justify-between pb-2 mb-3 border-b border-[#3b2762] text-xs font-bold text-yellow-300">
             <span>💿 RECORDING STUDIO</span>
-            <button className="btn-primary small" onClick={() => setScreen('production')}>+ PRODUCE</button>
+            <button className="px-2.5 py-1 rounded-lg text-[9px] bg-pink-600 hover:bg-pink-500 text-white font-bold border border-pink-400" onClick={() => setScreen('production')}>+ PRODUCE</button>
           </div>
           {activeProds.length === 0 ? (
-            <div className="empty-slot-msg">
+            <div className="empty-slot-msg text-center py-6 text-purple-300 text-xs">
               <p>No albums currently in production.</p>
-              <button className="btn-primary mt-1" onClick={() => setScreen('production')}>
+              <button className="mt-3 px-3 py-1.5 rounded-lg text-xs bg-pink-600 hover:bg-pink-500 text-white font-bold border border-pink-400" onClick={() => setScreen('production')}>
                 START ALBUM PRODUCTION
               </button>
             </div>
           ) : (
-            <div className="prod-list">
+            <div className="space-y-2.5">
               {activeProds.map(p => {
                 const pct = Math.min(100, Math.round((p.weeksCompleted / p.totalWeeksRequired) * 100))
                 return (
-                  <div key={p.id} className="prod-card">
-                    <div className="prod-header">
-                      <strong>"{p.title}"</strong>
-                      <span className="tag-chip">{p.releaseType}</span>
+                  <div key={p.id} className="p-3 rounded-xl bg-[#120826] border border-[#3b2762]">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <strong className="text-white truncate">"{p.title}"</strong>
+                      <span className="px-1.5 py-0.2 rounded text-[8px] bg-pink-950/80 text-pink-300 border border-pink-500/40">{p.releaseType}</span>
                     </div>
-                    <div className="small text-lav">Artist: {p.targetName} · {p.genre} · {p.concept}</div>
-                    <div className="prod-progress-wrap mt-1">
-                      <div className="stat-bar-wrap">
-                        <span className="bar-label">PROG</span>
-                        <div className="bar-track">
-                          <div className="bar-fill" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="bar-val">{p.weeksCompleted}/{p.totalWeeksRequired}W</span>
+                    <div className="text-[9px] text-purple-300">Artist: {p.targetName} · {p.genre} · {p.concept}</div>
+                    <div className="mt-2">
+                      <div className="flex justify-between text-[8px] text-purple-300 mb-0.5">
+                        <span>PROGRESS</span>
+                        <span>{p.weeksCompleted}/{p.totalWeeksRequired} WEEKS</span>
+                      </div>
+                      <div className="w-full bg-[#241744] h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-pink-500 to-yellow-400 h-full rounded-full" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   </div>
@@ -176,46 +176,48 @@ export default function Dashboard({ setScreen }) {
         </div>
 
         {/* Market Trends */}
-        <div className="panel">
-          <div className="panel-title flex items-center justify-between">
+        <div className="panel rounded-2xl border-2 border-[#543b8a] bg-[#1e1338] p-4 shadow-xl">
+          <div className="panel-title flex items-center justify-between pb-2 mb-3 border-b border-[#3b2762] text-xs font-bold text-yellow-300">
             <span>📈 MUSIC MARKET TRENDS</span>
-            <span className="small text-lav">UPDATED WEEKLY</span>
+            <span className="text-[9px] text-purple-300 font-normal">UPDATED WEEKLY</span>
           </div>
-          <div className="trend-banner">
-            <div className="trend-headline">"{state.trends?.headline}"</div>
-            <div className="trend-tags mt-1">
-              <span className="small text-lav">Trending Genres:</span>
+          <div className="space-y-2.5 text-xs">
+            <div className="text-white font-bold p-2.5 rounded-xl bg-[#120826] border border-[#3b2762]">
+              "{state.trends?.headline}"
+            </div>
+            <div className="flex items-center gap-2 flex-wrap text-[10px]">
+              <span className="text-purple-400">Trending Genres:</span>
               {(state.trends?.genres || []).map(g => (
-                <span key={g} className="tag-chip text-gold">🔥 {g}</span>
+                <span key={g} className="px-2 py-0.5 rounded-lg bg-yellow-950/80 text-yellow-300 border border-yellow-500/40 font-bold">🔥 {g}</span>
               ))}
             </div>
-            <div className="trend-tags mt-1">
-              <span className="small text-lav">Trending Concept:</span>
+            <div className="flex items-center gap-2 flex-wrap text-[10px]">
+              <span className="text-purple-400">Trending Concept:</span>
               {(state.trends?.concepts || []).map(c => (
-                <span key={c} className="tag-chip text-pink">✨ {c}</span>
+                <span key={c} className="px-2 py-0.5 rounded-lg bg-pink-950/80 text-pink-300 border border-pink-500/40 font-bold">✨ {c}</span>
               ))}
             </div>
-            <p className="tiny text-lav mt-2">
+            <p className="text-[9px] text-purple-300 leading-relaxed pt-1">
               Albums aligning with trending genres and concepts earn substantial quality and sales bonuses!
             </p>
           </div>
         </div>
 
         {/* Weekly Schedule Preview */}
-        <div className="panel">
-          <div className="panel-title flex items-center justify-between">
+        <div className="panel rounded-2xl border-2 border-[#543b8a] bg-[#1e1338] p-4 shadow-xl">
+          <div className="panel-title flex items-center justify-between pb-2 mb-3 border-b border-[#3b2762] text-xs font-bold text-yellow-300">
             <span>📅 WEEKLY ACTIVITY PLAN</span>
-            <button className="btn-primary small" onClick={() => setScreen('schedules')}>PLANNER</button>
+            <button className="px-2.5 py-1 rounded-lg text-[9px] bg-[#2d1b54] hover:bg-pink-600 text-purple-200 hover:text-white font-bold border border-purple-500/40" onClick={() => setScreen('schedules')}>PLANNER →</button>
           </div>
-          <div className="schedule-preview-days">
+          <div className="space-y-1.5 text-xs">
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
               const acts = state.weeklyPlan?.[day] || []
               return (
-                <div key={day} className="preview-day-row">
-                  <span className="day-name">{day.slice(0, 3)}:</span>
-                  <span className="day-acts">
+                <div key={day} className="flex items-center justify-between p-1.5 rounded-lg bg-[#120826] border border-[#3b2762] text-[9px]">
+                  <strong className="text-yellow-300 w-12">{day.slice(0, 3)}:</strong>
+                  <span className="text-purple-200 truncate flex-1 text-right">
                     {acts.length === 0 ? (
-                      <em className="text-gray">Rest Day</em>
+                      <em className="text-purple-400/60">Rest Day</em>
                     ) : (
                       acts.map(a => a.targetName ? `${a.targetName} (${a.name})` : a.name).join(', ')
                     )}
@@ -227,25 +229,27 @@ export default function Dashboard({ setScreen }) {
         </div>
 
         {/* Quick Agency Actions */}
-        <div className="panel">
-          <div className="panel-title">⚡ QUICK AGENCY ACTIONS</div>
-          <div className="quick-actions-grid">
-            <button className="btn-gold" onClick={() => setScreen('auditions')}>
+        <div className="panel rounded-2xl border-2 border-[#543b8a] bg-[#1e1338] p-4 shadow-xl">
+          <div className="panel-title pb-2 mb-3 border-b border-[#3b2762] text-xs font-bold text-yellow-300">
+            ⚡ QUICK AGENCY ACTIONS
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[10px]">
+            <button className="p-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold border border-yellow-300 shadow cursor-pointer text-center" onClick={() => setScreen('auditions')}>
               ✨ AUDITION TALENT
             </button>
-            <button className="btn-primary" onClick={() => setScreen('groups')}>
-              👥 MANAGE GROUPS
+            <button className="p-3 rounded-xl bg-[#241744] hover:bg-[#342260] text-purple-200 hover:text-white font-bold border border-purple-500/40 shadow cursor-pointer text-center" onClick={() => setScreen('groups')}>
+              👥 GROUPS
             </button>
-            <button className="btn-primary" onClick={() => setScreen('training')}>
+            <button className="p-3 rounded-xl bg-[#241744] hover:bg-[#342260] text-purple-200 hover:text-white font-bold border border-purple-500/40 shadow cursor-pointer text-center" onClick={() => setScreen('training')}>
               🏋️ TRAIN IDOLS
             </button>
-            <button className="btn-primary" onClick={() => setScreen('concerts')}>
+            <button className="p-3 rounded-xl bg-[#241744] hover:bg-[#342260] text-purple-200 hover:text-white font-bold border border-purple-500/40 shadow cursor-pointer text-center" onClick={() => setScreen('concerts')}>
               🏟️ PLAN CONCERT
             </button>
-            <button className="btn-primary" onClick={() => setScreen('company')}>
+            <button className="p-3 rounded-xl bg-[#241744] hover:bg-[#342260] text-purple-200 hover:text-white font-bold border border-purple-500/40 shadow cursor-pointer text-center" onClick={() => setScreen('company')}>
               🏢 HQ UPGRADES
             </button>
-            <button className="btn-primary" onClick={() => setScreen('wardrobe')}>
+            <button className="p-3 rounded-xl bg-[#241744] hover:bg-[#342260] text-purple-200 hover:text-white font-bold border border-purple-500/40 shadow cursor-pointer text-center" onClick={() => setScreen('wardrobe')}>
               👗 WARDROBE SHOP
             </button>
           </div>

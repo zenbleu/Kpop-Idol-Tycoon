@@ -9,6 +9,26 @@ import { createEmptyWeeklyPlan } from './schedules.js'
 
 export const SAVE_KEY_PREFIX = 'kpop_idol_tycoon_slot_'
 export const AUTOSAVE_KEY = 'kpop_idol_tycoon_autosave'
+export const SAVE_SCHEMA_VERSION = 1
+
+export function isSaveData(data) {
+  if (!data || typeof data !== 'object') return false
+  if (typeof data.schemaVersion === 'number' && data.schemaVersion > SAVE_SCHEMA_VERSION) {
+    return false
+  }
+  return typeof data.week === 'number' || typeof data.money === 'number' || typeof data.companyName === 'string' || typeof data.schemaVersion === 'number'
+}
+
+export function createSaveData(state) {
+  return {
+    ...state,
+    schemaVersion: SAVE_SCHEMA_VERSION,
+    saveVersion: GAME_VERSION,
+    lastSaved: Date.now(),
+    toasts: [],
+    modalQueue: [],
+  }
+}
 
 export function getInitialGameState(options = {}) {
   return {
@@ -116,12 +136,27 @@ export function validateSaveData(data) {
 /**
  * Migrates older saves or applies defaults to missing fields.
  */
-export function migrateSaveData(raw) {
+export function migrateSaveData(raw = {}) {
   const base = getInitialGameState()
+  const rawGenres = raw.unlockedGenres || ['Romance', 'Comedy', 'Drama']
+  const unlockedGenres = rawGenres.includes('Comedy') ? rawGenres : [...rawGenres, 'Comedy']
+  const rawTiers = raw.unlockedTiers || ['Rookie']
+  const unlockedTiers = rawTiers.includes('Rookie') ? rawTiers : [...rawTiers, 'Rookie']
+
   const migrated = {
     ...base,
     ...raw,
+    schemaVersion: SAVE_SCHEMA_VERSION,
     saveVersion: GAME_VERSION,
+    week: raw.week ?? base.week,
+    history: raw.history || raw.discographyHistory || [],
+    unlockedGenres,
+    unlockedTiers,
+    modalQueue: Array.isArray(raw.modalQueue) ? raw.modalQueue : [],
+    events: Array.isArray(raw.events) ? raw.events : (raw.eventsLog || []),
+    flags: raw.flags || {},
+    awardsPhase: null,
+    awardsData: null,
     weeklyPlan: raw.weeklyPlan || createEmptyWeeklyPlan(),
     upgrades: raw.upgrades || [],
     idols: (raw.idols || []).map(i => ({

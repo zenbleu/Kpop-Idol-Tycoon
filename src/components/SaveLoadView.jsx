@@ -8,6 +8,7 @@ import {
 } from '../game/save.js'
 import { formatMoney } from '../game/balance.js'
 import { playSfx } from '../game/audio.js'
+import Modal from './ui/Modal.jsx'
 
 export default function SaveLoadView() {
   const { state, dispatch } = useGame()
@@ -303,30 +304,37 @@ export default function SaveLoadView() {
 
       {/* RESET CONFIRM MODAL */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1c1236] border-2 border-red-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-sm font-bold text-red-400 font-pixel mb-2">
-              ⚠️ CONFIRM HARD RESET?
-            </h3>
-            <p className="text-xs text-purple-200 font-pixel mb-4 leading-relaxed">
-              This action will erase your current agency progress, idols, groups, and local storage saves.
-            </p>
-            <div className="flex justify-between gap-3">
+        <Modal
+          isOpen={showResetConfirm}
+          onClose={() => setShowResetConfirm(false)}
+          title="CONFIRM HARD RESET?"
+          subtitle="Permanently erase agency save data"
+          icon="⚠️"
+          size="sm"
+          borderColor="border-red-600"
+          footer={
+            <div className="flex justify-end gap-2.5 w-full">
               <button
+                type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="btn-primary text-xs font-pixel py-2 px-4"
+                className="btn-secondary text-xs font-pixel py-1.5 px-3"
               >
                 CANCEL
               </button>
               <button
+                type="button"
                 onClick={handleResetGame}
-                className="btn-danger text-xs font-pixel py-2 px-4"
+                className="btn-danger text-xs font-pixel py-1.5 px-3.5"
               >
                 WIPE & START OVER
               </button>
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="text-xs text-purple-200 font-pixel leading-relaxed">
+            This action will erase your current agency progress, idols, groups, and local storage saves.
+          </p>
+        </Modal>
       )}
     </div>
   )
